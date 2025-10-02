@@ -2,8 +2,7 @@
   "name": "keyword-extractor",
   "version": "1.0.0",
   "main": "index.js",
-    "type": "module",
-  
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -17,6 +16,7 @@
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "node-fetch": "^3.3.2",
-    "openai": "^6.0.1"
+    "openai": "^6.0.1",
+    "puppeteer": "^24.23.0"
   }
 }

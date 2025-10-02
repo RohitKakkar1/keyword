@@ -1,6 +1,5 @@
-import fetch from "node-fetch";
-import * as cheerio from "cheerio";
 import OpenAI from "openai";
+import puppeteer from "puppeteer";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -15,14 +14,33 @@ export default async function handler(req, res) {
     const { url } = req.body;
     if (!url) return res.status(400).json({ error: "URL is required" });
 
-    // Fetch website content
-    const response = await fetch(url);
-    const html = await response.text();
+    // Launch Puppeteer
+    const browser = await puppeteer.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.goto(url, { waitUntil: "networkidle2" }); // Wait until network is idle
 
-    // Extract text using cheerio
-    const $ = cheerio.load(html);
-    let text = $("body").text().replace(/\s+/g, " ").trim();
-    text = text.substring(0, 4000); // limit for GPT
+    // Extract all visible text including menu items
+    const text = await page.evaluate(() => {
+      const bodyText = document.body.innerText;
+      let menuText = "";
+      const menuSelectors = ["nav a", "header a", ".menu a", ".navbar a"];
+      menuSelectors.forEach(sel => {
+        document.querySelectorAll(sel).forEach(el => {
+          menuText += el.innerText + " ";
+        });
+      });
+      return (bodyText + " " + menuText).replace(/\s+/g, " ").trim();
+    });
+
+    await browser.close();
+
+    if (!text || text.length < 20) {
+      return res.status(200).json({
+        keywords: [],
+        message:
+          "It seems there’s no content available to extract keywords. Please provide website details."
+      });
+    }
 
     // GPT request to extract 10 keywords
     const completion = await openai.chat.completions.create({
@@ -31,13 +49,13 @@ export default async function handler(req, res) {
         {
           role: "system",
           content:
-            "You are a keyword extractor. Extract 10 concise keywords about the website's products, services, or brands."
+            "You are a keyword extractor. Extract 10 concise keywords about the website's products, services, brands, or categories, including menu items."
         },
-        { role: "user", content: text }
+        { role: "user", content: text.substring(0, 4000) }
       ]
     });
 
-    let keywords = completion.choices[0].message.content
+    const keywords = completion.choices[0].message.content
       .split("\n")
       .map(k => k.replace(/^\d+\. /, "").trim())
       .filter(k => k.length > 0)
