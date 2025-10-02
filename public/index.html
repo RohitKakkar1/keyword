@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Keyword Extractor</title>
+</head>
+<body>
+  <h2>Website Keyword Extractor</h2>
+  <input type="text" id="urlInput" placeholder="Enter website URL" style="width:300px;">
+  <button onclick="getKeywords()">Get Keywords</button>
+
+  <h3>Keywords:</h3>
+  <ul id="keywordList"></ul>
+
+  <script>
+    async function getKeywords() {
+      const url = document.getElementById("urlInput").value;
+      const res = await fetch("/api/extract-keywords", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url })
+      });
+
+      const data = await res.json();
+      const list = document.getElementById("keywordList");
+      list.innerHTML = "";
+      if (data.keywords) {
+        data.keywords.forEach(k => {
+          const li = document.createElement("li");
+          li.textContent = k;
+          list.appendChild(li);
+        });
+      } else {
+        list.innerHTML = `<li>Error: ${data.error}</li>`;
+      }
+    }
+  </script>
+</body>
+</html>
