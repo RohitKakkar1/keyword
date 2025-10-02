@@ -16,10 +16,11 @@
     async function getKeywords() {
       const url = document.getElementById("urlInput").value;
       const res = await fetch("/api/extract-keywords", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url })
-      });
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ url })
+});
+
 
       const data = await res.json();
       const list = document.getElementById("keywordList");
